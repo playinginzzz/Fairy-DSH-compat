@@ -30,6 +30,14 @@
     "mdast-util-gfm": "3.1.0",
     "micromark-extension-gfm": "3.0.0"
   },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-settings": "^0.1.0-rc.7 || ^0.1.1-rc.2 || ^0.1.2-alpha.2 || ^0.2.0-rc.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-settings": {
+      "optional": true
+    }
+  },
   "scripts": {
     "test": "node --test test/*.test.js"
   }
