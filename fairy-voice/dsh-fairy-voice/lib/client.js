@@ -381,20 +381,25 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
 
     function createActiveSessionStore(sessions) {
       const listeners = new Set();
-      // [compat patch] Normalize the "current session" across kernel revisions:
-      // older lists carry a plain id string; some builds expose it as an object
-      // ({id|sessionId|key}) or under a different field. Anything unparseable
-      // falls back to 'empty-chat' only as a last resort.
+      // [compat patch] dsh 0.2.0 removed `list.getSnapshot().current`; the
+      // active session is now the row retained by the main view (canonical
+      // derivation: dsh-client-ui-open-in-app `retainedBy.mainView > 0`).
+      // Keep the legacy string/object forms for older kernels.
       const readKey = () => {
         try {
           const snap = sessions?.list?.getSnapshot?.();
-          const candidates = [snap?.current, snap?.currentId, snap?.active, snap?.selected];
-          for (const candidate of candidates) {
-            if (typeof candidate === 'string' && candidate !== '') return candidate;
-            if (candidate && typeof candidate === 'object') {
-              const id = candidate.id ?? candidate.sessionId ?? candidate.key;
-              if (typeof id === 'string' && id !== '') return id;
-            }
+          const legacy = snap?.current ?? snap?.currentId ?? snap?.active ?? snap?.selected;
+          if (typeof legacy === 'string' && legacy !== '') return legacy;
+          if (legacy && typeof legacy === 'object') {
+            const id = legacy.id ?? legacy.sessionId ?? legacy.key;
+            if (typeof id === 'string' && id !== '') return id;
+          }
+          if (snap?.byId && typeof snap.byId === 'object') {
+            const rows = Array.isArray(snap.byId) ? snap.byId : Object.values(snap.byId);
+            const active = rows.find((row) => row && typeof row === 'object' && ((row.retainedBy && row.retainedBy.mainView) || 0) > 0);
+            const id = active && (active.id ?? active.sessionId ?? active.key);
+            if (typeof id === 'string' && id !== '') return id;
+            if (Array.isArray(snap.ids) && snap.ids.length === 1 && typeof snap.ids[0] === 'string') return snap.ids[0];
           }
         } catch (error) { /* fall through */ }
         return 'empty-chat';
@@ -407,10 +412,15 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
         listeners.forEach((listener) => listener());
       };
       const off = sessions?.list?.subscribe?.(sync) || null;
+      // Retention flips (mainView hand-off) may not emit a list change on every
+      // kernel build — poll lightly so `sessionActive` heals instead of staying
+      // stuck on 'empty-chat' (which silently disables auto-read and the
+      // per-message play button).
+      const poll = setInterval(sync, 1500);
       return {
         getSnapshot: () => snapshot,
         subscribe: (listener) => { listeners.add(listener); return () => listeners.delete(listener); },
-        dispose: () => { off?.(); listeners.clear(); },
+        dispose: () => { off?.(); clearInterval(poll); listeners.clear(); },
       };
     }
 
