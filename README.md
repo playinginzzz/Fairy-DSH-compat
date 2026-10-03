@@ -2,6 +2,11 @@
 
 **给 DSH 加一只看着您的 Fairy** —— 浮层、HDD 视觉主题、朗读（**可以不依赖显卡！**）、余额、截图 Dock。
 
+> 🍴 **本仓库是兼容 fork**：基于 [Guzhou2002/Fairy-DSH-Optimized](https://github.com/Guzhou2002/Fairy-DSH-Optimized) v0.3.8，
+> 追加 **17 个跨内核兼容提交**（dsh `0.1.5-rc.1` → `0.2.0-rc.2`；DSH Desktop **2.0.9 → 2.0.17** 全量实测验证），
+> 修复了 `settingsScope`/`configForms` 改名、预设声明注册、图标导出改名、active session 快照变更等 10 类内核升级故障。
+> 通用问题仍请提[上游 Issues](https://github.com/Guzhou2002/Fairy-DSH-Optimized/issues)；**本 fork 的兼容问题**可开本仓 Issues。
+
 > 🔗 **上游血缘**：本项目**整理自** [橙汁本色](https://github.com/Chengzhibense/Fairy-DSH) 的 **Fairy-DSH**，
 > 是**它的分支优化版**（对外叫 **孤舟版**）—— 在橙汁的代码上做**分发**：一条命令装完、出问题能自己查。
 
