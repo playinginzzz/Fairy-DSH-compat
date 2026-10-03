@@ -5,6 +5,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { chmod, mkdir, open, readFile, rename, unlink, writeFile, appendFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
+import { connect } from 'node:net';
 import { randomUUID } from 'node:crypto';
 import { createPcmStreamHandler } from './server/local-tts-proxy.js';
 import {
@@ -724,11 +725,17 @@ export function apply(ctx) {
    * 不建的话使用者根本不知道该把音色文件放哪儿 —— 自检只会干说「参考音频没找到」。
    * 失败也不影响启动：日志里 warn 一下就好，不该因为一个目录建不出来就让插件挂掉。 */
   void ensureFairyDirectories().catch((error) => diagnostics.warn('reference.dir', {}, error));
-  /* [local patch 1.0.0] 启动时自动拉起 GPT-SoVITS api_v2（端口9880）。
-   * 用 start_api.bat 自带的端口守卫防双开；进程 detached 后脱离 DSH 生命周期，
-   * DSH 退出不影响已启动的 API，API 崩了也不影响 DSH。 */
+  /* [local patch 1.0.0 + compat-hardening] 启动时自动拉起 GPT-SoVITS api_v2（端口9880）。
+   * 旧实现整个委托给 start_api.bat，但 bat 的 `netstat | findstr` 端口守卫在本机
+   * 出现过挂死（findstr 不退出 → python 永远起不来，autostart.log 里只留一行
+   * spawn attempt 没有 exit），历史上还有大量 exit 1/2/0xC000013A 的失败记录。
+   * 现改为：Node 侧先探 9880（800ms 超时）—— 已监听就跳过（防双开）；
+   * 未监听则用 cmd 只做输出重定向、直接拉 .venv 的 python（参数与 bat 完全一致，
+   * 输出同样接 api.log/api.err），跳过 bat 里会挂死的 netstat 守卫。
+   * 直连启动本身抛异常时回落原 bat 路径。日志格式与旧版保持兼容。 */
   try {
     const bat = 'C:\\GPT-SoVITS\\start_api.bat';
+    const gptDir = 'C:\\GPT-SoVITS';
     const logFile = join(homedir(), '.dsh', 'fairy-voice', 'autostart.log');
     const stamp = new Date().toISOString();
     void (async () => {
@@ -737,14 +744,41 @@ export function apply(ctx) {
         await appendFile(logFile, `[${stamp}] apply() spawn attempt, bat=${bat}\n`);
       } catch {}
     })();
-    const child = spawn('cmd.exe', ['/c', bat], { detached: true, stdio: 'ignore', windowsHide: true });
-    child.on('error', (err) => {
-      void (async () => { try { await appendFile(logFile, `[${new Date().toISOString()}] spawn ERROR: ${err.message}\n`); } catch {} })();
+    const logLine = (text) => {
+      void (async () => { try { await appendFile(logFile, `[${new Date().toISOString()}] ${text}\n`); } catch {} })();
+    };
+    const spawnTracked = (command, args, options, tag) => {
+      const child = spawn(command, args, options);
+      child.on('error', (err) => logLine(`spawn ERROR: ${err.message}`));
+      child.on('exit', (code, signal) => logLine(`child exit code=${code} signal=${signal} (${tag})`));
+      child.unref();
+      return child;
+    };
+    const launchDirect = () => {
+      try {
+        spawnTracked(
+          'cmd.exe',
+          ['/c', '".venv\\Scripts\\python.exe" api_v2.py -a 127.0.0.1 -p 9880 >> api.log 2>> api.err'],
+          { cwd: gptDir, detached: true, stdio: 'ignore', windowsHide: true },
+          'direct',
+        );
+        logLine('direct launch: .venv python api_v2.py (bat port-guard bypassed)');
+      } catch (error) {
+        diagnostics.warn('sovits-autostart', {}, error);
+        logLine(`direct launch failed, falling back to bat: ${error.message}`);
+        spawnTracked('cmd.exe', ['/c', bat], { detached: true, stdio: 'ignore', windowsHide: true }, 'bat-fallback');
+      }
+    };
+    const probe = connect({ port: 9880, host: '127.0.0.1' });
+    probe.setTimeout(800);
+    let settled = false;
+    probe.on('connect', () => {
+      settled = true;
+      probe.destroy();
+      logLine('port 9880 already listening, skip launch');
     });
-    child.on('exit', (code, signal) => {
-      void (async () => { try { await appendFile(logFile, `[${new Date().toISOString()}] child exit code=${code} signal=${signal}\n`); } catch {} })();
-    });
-    child.unref();
+    probe.on('timeout', () => { probe.destroy(); if (!settled) { settled = true; launchDirect(); } });
+    probe.on('error', () => { probe.destroy(); if (!settled) { settled = true; launchDirect(); } });
   } catch (error) {
     diagnostics.warn('sovits-autostart', {}, error);
   }
