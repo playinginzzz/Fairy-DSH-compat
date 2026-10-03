@@ -2,35 +2,28 @@
 
 DSH Desktop 跨内核兼容版 Fairy 插件套件（视觉 / HDD 主题 / 朗读 / 余额）：18 个兼容提交适配 dsh 0.1.5 → 0.2.0-rc.2（DSH Desktop 2.0.9 ~ 2.0.17 全量实测），修复预设声明注册、settingsScope→configForms 改名、图标导出变更、active session 快照、workflow 引擎注入等 10 类内核升级故障；HDD 视觉可选（不开也能朗读）、GPT-SoVITS 自动拉起加固、放音策略诊断探针。feature-detection 双内核兼容，回退 2.0.9 零副作用。基于孤舟版 v0.3.8。
 
-> 🍴 **本仓库是兼容 fork**：基于 [Guzhou2002/Fairy-DSH-Optimized](https://github.com/Guzhou2002/Fairy-DSH-Optimized) v0.3.8，
-> 追加 **18 个跨内核兼容提交**（dsh `0.1.5-rc.1` → `0.2.0-rc.2`；DSH Desktop **2.0.9 → 2.0.17** 全量实测验证），
-> 修复了 `settingsScope`/`configForms` 改名、预设声明注册、图标导出改名、active session 快照变更等 10 类内核升级故障。
-> 通用问题仍请提[上游 Issues](https://github.com/Guzhou2002/Fairy-DSH-Optimized/issues)；**本 fork 的兼容问题**可开本仓 Issues。
+> 🍴 **本仓库 = 跨内核兼容 fork**（[playinginzzz/Fairy-DSH-compat](https://github.com/playinginzzz/Fairy-DSH-compat)）：
+> 基于 [孤舟版 v0.3.8](https://github.com/Guzhou2002/Fairy-DSH-Optimized) 追加 **18 个兼容提交**（见上方简介）。
+> **兼容 / 崩溃问题 → 开本仓库 Issues**；上游通用功能问题 → [Guzhou2002 仓库](https://github.com/Guzhou2002/Fairy-DSH-Optimized/issues) 或交流群 `1124349108`。
 
-> 🔗 **上游血缘**：本项目**整理自** [橙汁本色](https://github.com/Chengzhibense/Fairy-DSH) 的 **Fairy-DSH**，
-> 是**它的分支优化版**（对外叫 **孤舟版**）—— 在橙汁的代码上做**分发**：一条命令装完、出问题能自己查。
-
-> 🤝 **友情链接 · 生态里的三家**（同一个源头，各干一段，**别装重**）
+> 🔗 **项目血缘（参考信息）**——同一源头的三段演进，**别装重**：
 >
 > | 谁 | 仓库 | 是什么 |
 > | --- | --- | --- |
-> | 🍊 **橙汁本色**（原作者） | [Chengzhibense/Fairy-DSH](https://github.com/Chengzhibense/Fairy-DSH) | 上游原始仓库。作者的最终目标是**独立的 Electron 桌宠应用**，这里是他的开发仓库，**不含安装器、外人装不上** |
-> | ⛵ **孤舟版**（本仓库） | [Guzhou2002/Fairy-DSH-Optimized](https://github.com/Guzhou2002/Fairy-DSH-Optimized) | 在橙汁代码上做**分发与排障**：`install.cmd` 一条命令、Release + SHA256、朗读自检面板、面向新手的文档 |
-> | ☁️ **云朵版** | [addsas222/Fairy-DSH-Exp](https://github.com/addsas222/Fairy-DSH-Exp) | 另一套**独立分发**的**功能深度实验版**：人格包引擎、多会话模式、搜索枢纽、长期记忆、角色扮演+去 AI 味、多 TTS 引擎与语音输入 |
+> | 🍊 **橙汁本色**（原作者） | [Chengzhibense/Fairy-DSH](https://github.com/Chengzhibense/Fairy-DSH) | 最初上游：独立 Electron 桌宠方向的开发仓库，不含安装器、外人装不上 |
+> | ⛵ **孤舟版**（上游 fork） | [Guzhou2002/Fairy-DSH-Optimized](https://github.com/Guzhou2002/Fairy-DSH-Optimized) | 分发与排障：`install.cmd` 一条命令、Release + SHA256、朗读自检面板、新手文档。**本仓库的基线（v0.3.8）** |
+> | 🍴 **本仓库 · 跨内核兼容版** | [playinginzzz/Fairy-DSH-compat](https://github.com/playinginzzz/Fairy-DSH-compat) | 在孤舟版之上修 **dsh 内核升级故障**：0.1.5 → 0.2.0-rc.2（DSH Desktop 2.0.9 ~ 2.0.17 实测），feature-detection 双内核兼容、回退零副作用 |
+> | ☁️ **云朵版** | [addsas222/Fairy-DSH-Exp](https://github.com/addsas222/Fairy-DSH-Exp) | 另一支**独立分发**的功能实验版：人格包引擎、多会话模式、多 TTS 引擎等（与孤舟版无代码血缘） |
 >
-> ⚠️ **孤舟版与云朵版没有代码血缘、互不同步，而且装的东西会互相覆盖 —— 只装一个。**
-> 想折腾功能面，可以去看看云朵版；想**装上就能用、出问题能自己查**，留在这儿。
+> ⚠️ 孤舟版与云朵版互不同步、装的东西会互相覆盖 —— **只装一个。**
 
-> ⚠️ **这是非官方整理分支。**
-> 基于 [橙汁本色](https://github.com/Chengzhibense/Fairy-DSH) 的 **Fairy-DSH** 源代码整理而成，
-> 上游原创代码按 **Apache-2.0** 发布。本分支只做**安装分发**和少量本地增强。
->
-> **有问题请提到[本仓库 Issues](https://github.com/Guzhou2002/Fairy-DSH-Optimized/issues)
-> 或交流群 `1124349108`，请不要打扰上游作者。**
+> ⚠️ **非官方声明**：上游原创代码按 **Apache-2.0** 发布（见 [LICENSE](LICENSE) / [NOTICE](NOTICE)）。
+> 上游作者（橙汁本色）与孤舟版作者（孤舟蓑笠）**均未参与本 fork 的 18 个兼容改动**。
+> 本 fork 的问题请开**本仓库 Issues**，不要打扰上游作者。
 
-> 📌 **当前版本 v0.3.8** —— 版本号见仓库根 [`VERSION`](VERSION)；
-> [发布页](https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest) ·
-> 本版修了什么见 [`RELEASE-NOTES.md`](RELEASE-NOTES.md)
+> 📌 **当前版本**：基线 `v0.3.8` + 18 个兼容提交（2026-10-04）· 版本号见仓库根 [`VERSION`](VERSION)
+> 📄 [跨内核兼容性适配报告](<docs/DSH Desktop × Fairy 兼容性适配报告.pdf>) ·
+> 兼容版插件包用仓库根 [`pack.ps1`](pack.ps1) 自行打包 · 上游发布页：[Releases](https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest)
 
 ---
 
