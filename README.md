@@ -23,7 +23,7 @@ DSH Desktop 跨内核兼容版 Fairy 插件套件（视觉 / HDD 主题 / 朗读
 
 > 📌 **当前版本**：基线 `v0.3.8` + 18 个兼容提交（2026-10-04）· 版本号见仓库根 [`VERSION`](VERSION)
 > 📄 [跨内核兼容性适配报告](<docs/DSH Desktop × Fairy 兼容性适配报告.pdf>) ·
-> 兼容版插件包用仓库根 [`pack.ps1`](pack.ps1) 自行打包 · 上游发布页：[Releases](https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest)
+> **兼容版插件包下载：[本仓库 Releases](https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest)** · 上游发布页：[Releases](https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest)
 
 ---
 
@@ -33,7 +33,7 @@ DSH Desktop 跨内核兼容版 Fairy 插件套件（视觉 / HDD 主题 / 朗读
 
 把下面这段话丢给你的 DSH Agent：
 
-> 从 https://github.com/Guzhou2002/Fairy-DSH-Optimized 安装 `dsh-fairy-visual` 和
+> 从 https://github.com/playinginzzz/Fairy-DSH-compat 安装 `dsh-fairy-visual` 和
 > `dsh-balance-meter`和`dsh-fairy-voice` 到我的 web profile，**不要**装 `dsh-fairy-startup` 和 `dsh-browser-dock`。
 > 更完整的说明见 **[AGENTS.md](AGENTS.md)**。
 > 装完执行 `dsh --profile web --dump-config` 确认已经挂载。
@@ -43,9 +43,9 @@ DSH Desktop 跨内核兼容版 Fairy 插件套件（视觉 / HDD 主题 / 朗读
 
 | 下载这个 | 干什么 | 给谁用 |
 | --- | --- | --- |
-| **[`install.cmd`](https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/install.cmd)** | 装 3 个：视觉浮层 + 朗读 + 余额 | ✅ **推荐，绝大多数人用这个** |
-| **[`install_full.cmd`](https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/install_full.cmd)** | 装全部 5 个（多装启动画面 + 截图 Dock，**有已知风险**） | ⚠️ 清楚后果、确实想要的人 |
-| **[`uninstall.cmd`](https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/uninstall.cmd)** | **卸**：卸掉插件与预设，并把你改过的「默认预设」还原回去 | 🧹 不用了、想清干净的人 |
+| **[`install.cmd`](https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/install.cmd)** | 装 3 个：视觉浮层 + 朗读 + 余额 | ✅ **推荐，绝大多数人用这个** |
+| **[`install_full.cmd`](https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/install_full.cmd)** | 装全部 5 个（多装启动画面 + 截图 Dock，**有已知风险**） | ⚠️ 清楚后果、确实想要的人 |
+| **[`uninstall.cmd`](https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/uninstall.cmd)** | **卸**：卸掉插件与预设，并把你改过的「默认预设」还原回去 | 🧹 不用了、想清干净的人 |
 
 **📦 即装即卸**
 
@@ -68,9 +68,9 @@ DSH Desktop 跨内核兼容版 Fairy 插件套件（视觉 / HDD 主题 / 朗读
 
 ```powershell
 dsh plugin --profile web add `
-  https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/dsh-fairy-visual.tgz `
-  https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/dsh-fairy-voice.tgz `
-  https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/dsh-balance-meter.tgz
+  https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/dsh-fairy-visual.tgz `
+  https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/dsh-fairy-voice.tgz `
+  https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/dsh-balance-meter.tgz
 ```
 
 > 用的是别的 profile？把 `web` 换成你的 profile 名。
@@ -288,7 +288,7 @@ DSH 升级后若界面元素变化，插件会**静默降级**（有 capability 
 > 上游作者（橙汁本色）**没有参与本分支的任何改动**。安装脚本、设置栏合并、朗读自检、
 > 人设一键默认这些都是本分支加的，找他解决不了，还会平白打扰人家。
 >
-> - 本分支的问题 → 提到 [本仓库 Issues](https://github.com/Guzhou2002/Fairy-DSH-Optimized/issues) 或进群说
+> - 本 fork 的问题 → 提到 [本仓库 Issues](https://github.com/playinginzzz/Fairy-DSH-compat/issues) 或进群说
 > - 本分支与上游的关系、如何合并上游更新 → 见 `docs\仓库与上游.md`
 
 ---
@@ -359,7 +359,7 @@ DSH 升级后若界面元素变化，插件会**静默降级**（有 capability 
 
 ### E. 卸载 / 彻底重来
 
-**不会打命令？双击 [`uninstall.cmd`](https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/uninstall.cmd)**
+**不会打命令？双击 [`uninstall.cmd`](https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/uninstall.cmd)**
 （**记得把 `uninstall.ps1` 一起下下来，放同一个文件夹**）。
 
 它会做七件事：备份 profile 与设置 → 卸掉装过的 Fairy 插件 → **把你改过的「新会话默认预设」还原回去**
