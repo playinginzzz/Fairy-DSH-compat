@@ -1576,7 +1576,13 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
 
     function MessageAction({ messageId, sessionId }) {
       const conversation = React.useSyncExternalStore(voiceTimelineStore.subscribe, voiceTimelineStore.getSnapshot, voiceTimelineStore.getSnapshot);
-      const sessionKey = String(sessionId ?? activeSessionStore?.getSnapshot().key ?? 'empty-chat');
+      // [compat patch] Subscribe to the active-session store: dsh 0.2.0's
+      // retention-derived key settles a moment after mount (poll corrects it),
+      // and without this subscription the component keeps the initial
+      // 'empty-chat' key, never matches the timeline, and renders null forever.
+      const activeStore = activeSessionStore || emptyActiveSessionStore;
+      const activeSnap = React.useSyncExternalStore(activeStore.subscribe, activeStore.getSnapshot, activeStore.getSnapshot);
+      const sessionKey = String(sessionId ?? activeSnap?.key ?? 'empty-chat');
       const message = conversation.sessionKey === sessionKey
         ? conversation.messagesById.get(String(messageId))
         : undefined;
