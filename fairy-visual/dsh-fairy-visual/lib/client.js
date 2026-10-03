@@ -7713,6 +7713,31 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
         children: '当前版本 v0.3.5 · 最新打包时间 2026-09-14 13:37 · 本包为「孤舟蓑笠」基于「橙汁本色」开源项目的优化分支 · 交流群 1124349108'
       });
     }
+    /* [compat patch] HDD 视觉模式改为可选：未开启时在设置面板提示。
+     * 语音面板的视觉模式门已在本 fork 中移除（朗读控件不再依赖视觉模式），
+     * 所以这里只是一条可选提示，不是错误。观察 DOM 属性以与语音侧保持同一信号源。 */
+    function HddVisualModeNotice() {
+      const readMode = () => typeof document !== 'undefined' && document.documentElement !== null
+        && (document.documentElement.hasAttribute('data-dsh-fairy-visual')
+          || document.documentElement.getAttribute('data-dsh-fairy-mode') === 'hdd');
+      const visualOn = React.useSyncExternalStore((notify) => {
+        if (typeof MutationObserver !== 'function' || !document.documentElement) return () => {};
+        const observer = new MutationObserver(notify);
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['data-dsh-fairy-visual', 'data-dsh-fairy-mode'],
+        });
+        return () => observer.disconnect();
+      }, readMode, readMode);
+      if (visualOn) return null;
+      return jsx('div', {
+        className: 'dsh-fairy-notice',
+        'data-dsh-fairy-notice': 'true',
+        'data-dsh-fairy-hdd-visual-off': 'true',
+        style: { fontSize: '12px', lineHeight: 1.6, marginBottom: '10px', fontWeight: 600, color: 'var(--dsw-alias-state-warn-primary, #b58a2a)' },
+        children: '⚠️  HDD 视觉模式未开启（不影响朗读功能使用）'
+      });
+    }
     /* [local patch 0.3.5] 检查更新：只在面板挂载时查一次，【绝不】放进每 3 秒的重算里。
      * 两条数据来源：① 宿主启动时查过并落盘（读 /fairy-voice/update/status）；
      * ② 缓存缺失或超过 3 小时，才由浏览器自己查 GitHub —— 浏览器走系统/梯子代理，
@@ -7880,12 +7905,12 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
         const list = [];
         const diag = (typeof window !== 'undefined' && window.__FAIRY_VOICE_DIAG__) || null;
         const hasAudio = typeof window !== 'undefined' && Boolean(window.AudioContext || window.webkitAudioContext);
-        // 朗读控件挂在 HDD 视觉模式的槽位上：视觉模式不开，朗读按钮压根不会出现
+        // [compat patch] HDD 视觉模式已改为可选：语音面板的视觉门已移除，不开也不影响朗读。
         const visualOn = typeof document !== 'undefined'
           && (document.documentElement.hasAttribute('data-dsh-fairy-visual') || document.documentElement.getAttribute('data-dsh-fairy-mode') === 'hdd');
         list.push(visualOn
-          ? { id: 'visual-mode', title: 'HDD 视觉模式（朗读的前提）', level: 'ok', detail: 'H.D.D 视觉模式已开启 —— 朗读控件只在它开启时出现。', fix: '' }
-          : { id: 'visual-mode', title: 'HDD 视觉模式（朗读的前提）', level: 'fail', detail: 'H.D.D 视觉模式没开：朗读按钮和自动朗读开关都不会出现（这是上游插件的设计，不是坏了）。', fix: '到 设置 → Fairy 最上面把「启用」打开，然后回到会话页面刷新一次（Ctrl+F5）。' });
+          ? { id: 'visual-mode', title: 'HDD 视觉模式', level: 'ok', detail: 'H.D.D 视觉模式已开启。', fix: '' }
+          : { id: 'visual-mode', title: 'HDD 视觉模式', level: 'warn', detail: '⚠️  HDD 视觉模式未开启（不影响朗读功能使用）', fix: '想开启视觉效果：到 设置 → Fairy 最上面把「启用」打开，然后回到会话页面 Ctrl+F5 刷新一次。' });
         list.push(hasAudio
           ? { id: 'browser-audio', title: '浏览器音频播放能力', level: 'ok', detail: '这台浏览器支持 Web Audio，能播放朗读音频。', fix: '' }
           : { id: 'browser-audio', title: '浏览器音频播放能力', level: 'fail', detail: '这台浏览器不支持 Web Audio，朗读没办法出声。', fix: '换用新版 Chrome / Edge 等 Chromium 内核浏览器，并关掉可能禁用音频的扩展。' });
@@ -8597,7 +8622,7 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
 					order: 45,
 					label: () => "Fairy"
 				}, () => jsxs('div', {
-					children: [jsx(FairyUpdateNotice, {}), jsx(FairyNotice, {}), jsx('h3', { style: { margin: 0, paddingTop: '16px', borderTop: '1px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.3))', fontSize: '14px' }, children: '通用' }), jsx(Settings, {
+					children: [jsx(FairyUpdateNotice, {}), jsx(FairyNotice, {}), jsx(HddVisualModeNotice, {}), jsx('h3', { style: { margin: 0, paddingTop: '16px', borderTop: '1px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.3))', fontSize: '14px' }, children: '通用' }), jsx(Settings, {
 						controller,
 						identitySettings
 					}), jsx(FairyVoicePanel, {})]
