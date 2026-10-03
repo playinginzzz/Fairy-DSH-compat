@@ -68,6 +68,15 @@ const PRESET_SYNC_STAMP_PATH = join(DSH_HOME, '.fairy-persona', 'preset-sync.jso
 // 所以这里代劳：写之前先把原来的值存下来，关掉时原样还原。
 // ---------------------------------------------------------------------------
 const AGENT_PRESET_SETTINGS_NAMESPACE = 'agent-presets';
+// [compat patch] dsh 0.1.7+ re-keys settings by Loader entry id: the legacy
+// `agent-presets` row is now `agent-preset-registry`, the user's choice moved
+// from `default` (bundle fallback, non-volatile) to volatile `selectedDefault`,
+// and the service lost get()/replace() (describe() + update() only). Writing
+// the old key throws `No configurable plugin entry "agent-presets"`.
+const PRESET_REGISTRY_ENTRY_ID = 'agent-preset-registry';
+const usesLegacyPresetSettings = () => typeof settingsService?.register === 'function';
+const presetSettingsNs = () => (usesLegacyPresetSettings() ? AGENT_PRESET_SETTINGS_NAMESPACE : PRESET_REGISTRY_ENTRY_ID);
+const presetDefaultField = () => (usesLegacyPresetSettings() ? 'default' : 'selectedDefault');
 const DEFAULT_BACKUP_PATH = join(DSH_HOME, '.fairy-persona', 'default-preset-backup.json');
 let settingsService = null;
 
@@ -89,6 +98,15 @@ function writeDefaultBackup(previousDefault) {
 function readDefaultPreset() {
   if (settingsService === null) return null;
   try {
+    if (!usesLegacyPresetSettings()) {
+      // 0.1.7+: no get(); describe() synchronously projects live entry configs.
+      const row = settingsService.describe().find((entry) => entry.ns === PRESET_REGISTRY_ENTRY_ID);
+      const value = row?.value ?? {};
+      const current = typeof value.selectedDefault === 'string' && value.selectedDefault !== ''
+        ? value.selectedDefault
+        : (typeof value.default === 'string' ? value.default : '');
+      return current === '' ? null : current;
+    }
     const value = settingsService.get(AGENT_PRESET_SETTINGS_NAMESPACE);
     const current = typeof value?.default === 'string' ? value.default : '';
     return current === '' ? null : current;
@@ -106,15 +124,21 @@ async function setDefaultPreset(enabled) {
     if (!existsSync(join(PRESET_TARGET, 'agent.cordis.yml'))) setPresetEnabled(true);
     const previous = readDefaultPreset();
     if (previous !== PRESET_ID) writeDefaultBackup(previous === null ? '' : previous);
-    await settingsService.update(AGENT_PRESET_SETTINGS_NAMESPACE, { default: PRESET_ID });
+    await settingsService.update(presetSettingsNs(), { [presetDefaultField()]: PRESET_ID });
   } else {
     // 有备份就还原成原值；没有备份（例如默认值本来就是别人设的、或我们没记下）
     // 就回落到部署默认 —— 绝不能写空串，那会让新会话"没有默认预设"，比原来更糟。
     const previous = readDefaultBackup();
     if (previous !== null && previous !== '') {
-      await settingsService.update(AGENT_PRESET_SETTINGS_NAMESPACE, { default: previous });
+      await settingsService.update(presetSettingsNs(), { [presetDefaultField()]: previous });
     } else if (typeof settingsService.replace === 'function') {
-      await settingsService.replace(AGENT_PRESET_SETTINGS_NAMESPACE, {});
+      await settingsService.replace(presetSettingsNs(), {});
+    } else if (!usesLegacyPresetSettings()) {
+      // 0.1.7+: no replace(); writing '' would override the bundle default with
+      // an empty id — restore the entry's own composed default instead.
+      const row = settingsService.describe().find((entry) => entry.ns === PRESET_REGISTRY_ENTRY_ID);
+      const fallback = typeof row?.value?.default === 'string' && row.value.default !== '' ? row.value.default : 'standard';
+      await settingsService.update(PRESET_REGISTRY_ENTRY_ID, { selectedDefault: fallback });
     } else {
       await settingsService.update(AGENT_PRESET_SETTINGS_NAMESPACE, { default: '' });
     }
