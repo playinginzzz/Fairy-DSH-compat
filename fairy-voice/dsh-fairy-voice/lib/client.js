@@ -1483,6 +1483,25 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
         available: engine === 'system' || availability.available
       });
       const autoLabel = autoRead ? '关闭自动朗读' : '开启自动朗读';
+      // [compat patch] 放音策略探针：把自动朗读的每个门槛暴露给诊断面板，
+      // 下次"没声音"时复制诊断即可看到卡在哪一项。
+      try {
+        globalThis.__FAIRY_VOICE_DIAG__ = {
+          ...(globalThis.__FAIRY_VOICE_DIAG__ || {}),
+          policy: {
+            autoRead,
+            sessionActive,
+            baselineReady,
+            audioReady,
+            available: engine === 'system' || availability.available,
+            availabilityReason: availability.reason,
+            running: snapshot?.running === true,
+            status: state.status,
+            sessionKey,
+          },
+          policyAt: Date.now(),
+        };
+      } catch (error) { /* 诊断不应影响朗读 */ }
       const engineAvailable = engine === 'system' || availability.available;
       // Fixed irregular heights avoid a visible repeating cadence while keeping
       // React renders deterministic and free from animation jitter.
@@ -1574,8 +1593,17 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
         // registration before publishing the replacement.
         releaseRegistration();
         const registration = ctx.slots.register({ name, ...definition }, component);
-        disposeRegistration = typeof registration === 'function' ? registration : null;
-        return releaseRegistration;
+        const dispose = typeof registration === 'function' ? registration : null;
+        disposeRegistration = dispose;
+        // [compat patch] Instance-scoped cleanup: dsh 0.2.0 can deliver the
+        // PREVIOUS node's cleanup after the replacement has already registered.
+        // The old shared releaseRegistration() closure would then dispose the
+        // fresh registration and the control disappears until a full reload.
+        // Only dispose our own generation; stale cleanups dispose themselves only.
+        return () => {
+          if (disposeRegistration === dispose) disposeRegistration = null;
+          dispose?.();
+        };
       });
     }
 
