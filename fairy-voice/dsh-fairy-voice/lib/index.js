@@ -756,9 +756,12 @@ export function apply(ctx) {
     };
     const launchDirect = () => {
       try {
+        // 绝对路径且不带引号：Node 会把整个 /c 参数包成一对引号，
+        // 形成标准的 `cmd /c "... >> api.log 2>> api.err"`；
+        // 若字符串自带引号会与 Node 的自动引号叠加，cmd 会把它当成命令名执行（exit 1）。
         spawnTracked(
           'cmd.exe',
-          ['/c', '".venv\\Scripts\\python.exe" api_v2.py -a 127.0.0.1 -p 9880 >> api.log 2>> api.err'],
+          ['/c', `${gptDir}\\.venv\\Scripts\\python.exe api_v2.py -a 127.0.0.1 -p 9880 >> api.log 2>> api.err`],
           { cwd: gptDir, detached: true, stdio: 'ignore', windowsHide: true },
           'direct',
         );
