@@ -8586,10 +8586,63 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
 				]
 			});
 		}
+		/* [compat patch] dsh 0.1.7-alpha.1 renamed the settings binder service
+		 * `settingsScope` → `configForms`. Hard-declaring it in `inject` parks the
+		 * fiber forever on 0.1.7+ (boot fails with "client Loader did not provide
+		 * an error message"). Instead: declare only slots/sessions, look the old
+		 * binder up optionally (ctx.get is declaration-free), and fall back to a
+		 * localStorage-backed scope with the same {getSnapshot,subscribe,set}
+		 * contract so visual/identity settings keep working on every kernel.
+		 * (Full host-synced settings on 0.1.7+ need the Config-schema migration —
+		 * deferred; values persist per-renderer in the meantime.) */
+		function createLocalSettingsScope(namespace) {
+			const storageKey = `dsh.fairy.localSettings.v1.${namespace}`;
+			let snapshot = { status: "ready", value: {} };
+			try {
+				const raw = typeof localStorage !== "undefined" ? localStorage.getItem(storageKey) : null;
+				const parsed = raw ? JSON.parse(raw) : null;
+				if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
+					snapshot = { status: "ready", value: parsed };
+				}
+			} catch {}
+			const listeners = new Set();
+			return {
+				getSnapshot: () => snapshot,
+				subscribe: (listener) => {
+					listeners.add(listener);
+					return () => listeners.delete(listener);
+				},
+				set: (field, value) => {
+					snapshot = { status: "ready", value: { ...snapshot.value, [field]: value } };
+					try { localStorage.setItem(storageKey, JSON.stringify(snapshot.value)); } catch {}
+					for (const listener of [...listeners]) {
+						try { listener(); } catch {}
+					}
+				},
+			};
+		}
+		function resolveSettingsBinder(ctx) {
+			try {
+				if (typeof ctx.get === "function") {
+					const service = ctx.get("settingsScope");
+					if (service !== null && service !== void 0) return service;
+				}
+			} catch {}
+			try {
+				const service = ctx.settingsScope;
+				if (service !== null && service !== void 0) return service;
+			} catch {}
+			return null;
+		}
 		function apply(ctx) {
 			return diagnostics.guard("apply", () => {
-				const settings = ctx.settingsScope.bind({ namespace: SETTINGS_NAMESPACE });
-				const identitySettings = ctx.settingsScope.bind({ namespace: IDENTITY_SETTINGS_NAMESPACE });
+				const binder = resolveSettingsBinder(ctx);
+				const settings = binder && typeof binder.bind === "function"
+					? binder.bind({ namespace: SETTINGS_NAMESPACE })
+					: createLocalSettingsScope(SETTINGS_NAMESPACE);
+				const identitySettings = binder && typeof binder.bind === "function"
+					? binder.bind({ namespace: IDENTITY_SETTINGS_NAMESPACE })
+					: createLocalSettingsScope(IDENTITY_SETTINGS_NAMESPACE);
 				syncDocumentMode(settings.getSnapshot());
 				injectStyles();
 				const selectionGuard = createSelectionGuard({ selector: [
@@ -8633,8 +8686,7 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
 			apply,
 			inject: [
 				"slots",
-				"sessions",
-				"settingsScope"
+				"sessions"
 			],
 			name: "dsh-fairy-visual"
 		};
