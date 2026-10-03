@@ -381,7 +381,24 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
 
     function createActiveSessionStore(sessions) {
       const listeners = new Set();
-      const readKey = () => String(sessions?.list?.getSnapshot?.().current ?? 'empty-chat');
+      // [compat patch] Normalize the "current session" across kernel revisions:
+      // older lists carry a plain id string; some builds expose it as an object
+      // ({id|sessionId|key}) or under a different field. Anything unparseable
+      // falls back to 'empty-chat' only as a last resort.
+      const readKey = () => {
+        try {
+          const snap = sessions?.list?.getSnapshot?.();
+          const candidates = [snap?.current, snap?.currentId, snap?.active, snap?.selected];
+          for (const candidate of candidates) {
+            if (typeof candidate === 'string' && candidate !== '') return candidate;
+            if (candidate && typeof candidate === 'object') {
+              const id = candidate.id ?? candidate.sessionId ?? candidate.key;
+              if (typeof id === 'string' && id !== '') return id;
+            }
+          }
+        } catch (error) { /* fall through */ }
+        return 'empty-chat';
+      };
       let snapshot = { key: readKey(), epoch: 0 };
       const sync = () => {
         const key = readKey();
@@ -1498,6 +1515,8 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
             running: snapshot?.running === true,
             status: state.status,
             sessionKey,
+            activeKey: activeSelection?.key,
+            activeEpoch: activeSelection?.epoch,
           },
           policyAt: Date.now(),
         };
@@ -1616,6 +1635,12 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
           ctxKeys: Object.keys(ctx || {}).slice(0, 60),
           ctxSessionsKind: ctx ? typeof ctx.sessions : 'no-ctx',
           ctxSessionsKeys: ctx && ctx.sessions && typeof ctx.sessions === 'object' ? Object.keys(ctx.sessions).slice(0, 40) : [],
+          listSnap: (() => {
+            try {
+              const snap = ctx?.sessions?.list?.getSnapshot?.();
+              return snap ? { keys: Object.keys(snap).slice(0, 20), currentType: typeof snap.current, current: typeof snap.current === 'string' ? snap.current : JSON.stringify(snap.current)?.slice(0, 80) } : 'no-snapshot';
+            } catch (error) { return 'err:' + (error && error.message); }
+          })(),
         };
       } catch (error) { /* 诊断不应影响朗读 */ }
       // [local patch 0.3.1] 语音异常时右下角提示（位置与「预设未启用」提示一致；只在真的读不到消息时出现）
