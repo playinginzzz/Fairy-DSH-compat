@@ -35,6 +35,8 @@ export const name = 'dsh-fairy-visual';
 export function apply(ctx) {
   return diagnostics.guard('apply', () => {
     ctx.inject(['settings'], (settingsCtx) => {
+      // [compat patch] dsh 0.1.7+ removed register() — skip instead of crashing.
+      if (typeof settingsCtx.settings.register !== 'function') return;
       settingsCtx.settings.register(FAIRY_VISUAL_SETTINGS, FairyVisualSettings);
       settingsCtx.settings.register(FAIRY_IDENTITY_SETTINGS, FairyIdentitySettings);
     });

@@ -323,6 +323,13 @@ export function apply(ctx) {
     }
     ctx.inject(['settings'], (settingsCtx) => {
       settingsService = settingsCtx.settings;
+      // [compat patch] dsh 0.1.7+ removed register() — settings namespaces derive
+      // from the plugin Config schema there (same stop-gap as dshmarket #677).
+      // Keep the composed entry standing instead of crashing activation.
+      if (typeof settingsCtx.settings.register !== 'function') {
+        diagnostics.warn('settings.unsupported', { host: 'no-register' });
+        return;
+      }
       settingsCtx.settings.register(FAIRY_VISUAL_SETTINGS, FairyVisualSettings);
       settingsCtx.settings.register(FAIRY_IDENTITY_SETTINGS, FairyIdentitySettings);
     });
