@@ -3,7 +3,8 @@ import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { gfm } from 'micromark-extension-gfm';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { chmod, mkdir, open, readFile, rename, unlink, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, open, readFile, rename, unlink, writeFile, appendFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { createPcmStreamHandler } from './server/local-tts-proxy.js';
 import {
@@ -723,6 +724,30 @@ export function apply(ctx) {
    * 不建的话使用者根本不知道该把音色文件放哪儿 —— 自检只会干说「参考音频没找到」。
    * 失败也不影响启动：日志里 warn 一下就好，不该因为一个目录建不出来就让插件挂掉。 */
   void ensureFairyDirectories().catch((error) => diagnostics.warn('reference.dir', {}, error));
+  /* [local patch 1.0.0] 启动时自动拉起 GPT-SoVITS api_v2（端口9880）。
+   * 用 start_api.bat 自带的端口守卫防双开；进程 detached 后脱离 DSH 生命周期，
+   * DSH 退出不影响已启动的 API，API 崩了也不影响 DSH。 */
+  try {
+    const bat = 'C:\\GPT-SoVITS\\start_api.bat';
+    const logFile = join(homedir(), '.dsh', 'fairy-voice', 'autostart.log');
+    const stamp = new Date().toISOString();
+    void (async () => {
+      try {
+        await mkdir(dirname(logFile), { recursive: true });
+        await appendFile(logFile, `[${stamp}] apply() spawn attempt, bat=${bat}\n`);
+      } catch {}
+    })();
+    const child = spawn('cmd.exe', ['/c', bat], { detached: true, stdio: 'ignore', windowsHide: true });
+    child.on('error', (err) => {
+      void (async () => { try { await appendFile(logFile, `[${new Date().toISOString()}] spawn ERROR: ${err.message}\n`); } catch {} })();
+    });
+    child.on('exit', (code, signal) => {
+      void (async () => { try { await appendFile(logFile, `[${new Date().toISOString()}] child exit code=${code} signal=${signal}\n`); } catch {} })();
+    });
+    child.unref();
+  } catch (error) {
+    diagnostics.warn('sovits-autostart', {}, error);
+  }
   const handlers = createFairyVoiceHandlers();
   /* [local patch 0.3.5] 启动后延迟 5 秒查一次有没有新版本。
    * 设置面板打开时还会自己查一次（浏览器走代理，成功率高），两边共用同一份缓存，3 小时内有效。
