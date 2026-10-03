@@ -1516,11 +1516,10 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
     }
 
     function SessionScopedVoiceController(props) {
-      const hddVisualMode = useHddVisualMode();
-      // In normal DSH mode this slot has no Voice surface or controller
-      // lifecycle at all. Switching back to HDD mounts a fresh, session-keyed
-      // controller, so mode changes cannot retain audio or DOM ownership.
-      if (!hddVisualMode) return null;
+      // [compat patch] Upstream gates this slot on the visual-mode attribute
+      // (html[data-dsh-fairy-visual]) — with Fairy visual disabled the voice
+      // surface (朗读按钮/自动播报/音量) never renders. Restore the old
+      // always-on behavior instead of coupling voice UI to the visual mode.
       // Force a clean controller/ref lifecycle when DSH changes the active
       // session. This prevents playback and seen-message state leaking across
       // conversation providers during the transition frame.
