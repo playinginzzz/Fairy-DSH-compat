@@ -3,7 +3,16 @@ window.__ModuleLoader__.load({
   factory: (require) => {
     const React = require('react');
     const jsx = require('react/jsx-runtime');
-    const { Tooltip, IconPauseOutline16, IconPlayOutline16, IconStopFill16 } = require('@deepseek-ai/dsh-client-ui-primitives');
+    const __fairyPrimitives = require('@deepseek-ai/dsh-client-ui-primitives');
+const { Tooltip } = __fairyPrimitives;
+// [compat patch] dsh 0.2.0 renamed the icon exports: `Icon*16` became
+// `Icon*Regular`/`Icon*Medium` variants (same `size` prop). Destructuring the
+// old names alone yields undefined on 0.2.0 and React throws
+// "Element type is invalid" when MessageAction renders its play/stop button —
+// the per-message read button silently disappears. Resolve either generation.
+const IconPauseOutline16 = __fairyPrimitives.IconPauseOutline16 ?? __fairyPrimitives.IconPauseOutlineRegular;
+const IconPlayOutline16 = __fairyPrimitives.IconPlayOutline16 ?? __fairyPrimitives.IconPlayOutlineRegular;
+const IconStopFill16 = __fairyPrimitives.IconStopFill16 ?? __fairyPrimitives.IconStopFillRegular;
 
     const EVENT_PLAY = 'fairy-voice-play';
     const EVENT_STATE = 'fairy-voice-state';
