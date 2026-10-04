@@ -72,7 +72,24 @@ function collectSuites() {
   return suites;
 }
 
-/** 跑一个测试文件，返回 { pass, fail, timedOut, crashed } */
+/** 从测试输出里挑出有用的失败详情（CI 日志里能看到原因） */
+function failureDetail(out) {
+  const keep = [];
+  for (const raw of out.split(/\r?\n/)) {
+    const l = raw.trim();
+    if (!l) continue;
+    if (
+      /^(not ok|✖|# fail|ℹ fail)/.test(l) ||
+      /AssertionError|Error \[|did not match|expected:|actual:|Cannot find|ENOENT|Timed out/.test(l)
+    ) {
+      keep.push('      ' + l.slice(0, 220));
+    }
+  }
+  // 去重并限长，避免 CI 日志被单文件刷爆
+  return [...new Set(keep)].slice(0, 12).join('\n');
+}
+
+/** 跑一个测试文件，返回 { pass, fail, timedOut, crashed, out } */
 function runFile(file, cwd) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, ['--test', file], {
@@ -143,10 +160,12 @@ for (const suite of suites) {
 
     if (r.timedOut) {
       console.log(`  TIMEOUT  ${name}  (>${PER_FILE_TIMEOUT_MS}ms)`);
+      console.log(`      最后输出：\n${r.out.split(/\r?\n/).slice(-6).map((l) => '      ' + l.trim()).join('\n')}`);
       results.push({ suite: suite.label, file: name, status: 'timeout' });
       sf += 1;
     } else if (r.crashed) {
       console.log(`  CRASH    ${name}`);
+      console.log(`      原因：\n${failureDetail(r.out) || '      (无输出)'}`);
       results.push({ suite: suite.label, file: name, status: 'crash' });
       sf += 1;
     } else {
@@ -154,6 +173,8 @@ for (const suite of suites) {
       sf += r.fail;
       if (r.fail > 0) {
         console.log(`  FAIL     ${name}  (pass=${r.pass} fail=${r.fail})`);
+        // 关键：CI 日志里必须能看到"为什么失败"，否则远程排查只能靠猜
+        console.log(`      详情：\n${failureDetail(r.out)}`);
         results.push({ suite: suite.label, file: name, status: 'fail' });
       } else {
         console.log(`  ok       ${name}  (${r.pass})`);
