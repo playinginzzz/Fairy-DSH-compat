@@ -7757,9 +7757,19 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
         let alive = true;
         const TTL_MS = 3 * 60 * 60 * 1000;
         // 逐段比数字：1.0.10 > 1.0.9（不能按字符串比）
+        // [compat] 版本段比较：本仓库的发布 tag 形如 v0.3.8-compat.1，
+        // 而裸的 Number('compat') 是 NaN，会让 compat.2 也被判成"不大于"compat.1 ——
+        // 更新提示会永远失灵。这里先把 -compat.N 归一化成第 4 个数字段再逐段比较。
         const isNewer = (remote, local) => {
-          const a = String(remote).split('.');
-          const b = String(local).split('.');
+          const norm = (v) => {
+            const m = String(v).match(/^(\d+(?:\.\d+)*)(?:-compat\.(\d+))?$/i);
+            if (!m) return String(v).split('.').map((x) => Number(x) || 0);
+            const parts = m[1].split('.').map(Number);
+            parts.push(m[2] === undefined ? 0 : Number(m[2]));
+            return parts;
+          };
+          const a = norm(remote);
+          const b = norm(local);
           for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
             const na = Number(a[i] || 0);
             const nb = Number(b[i] || 0);
