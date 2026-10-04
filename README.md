@@ -434,6 +434,38 @@ DSH 升级后若界面元素变化，插件会**静默降级**（有 capability 
 | **[`docs/DSH Desktop × Fairy 兼容性适配报告.pdf`](<docs/DSH Desktop × Fairy 兼容性适配报告.pdf>)** | **本仓库核心档案**：跨内核适配全记录（时间线 / 10 类故障 / 修复策略 / 8 项验收 / 遗留事项） |
 | **[`docs/本地改动.md`](docs/本地改动.md)** | 相对上游改了什么、为什么改（分发方式 / 消息识别适配 / 诊断面板 / MOSS 引擎 / 设置栏合并） |
 | [`docs/仓库与上游.md`](docs/仓库与上游.md) | fork 维护手册：remote 分工、合并上游更新、结构性冲突点、**⚠️ 生成器不可用警告 + 编码规则** |
+| [`docs/测试与CI.md`](docs/测试与CI.md) | **测试体系与 CI**：怎么跑、覆盖了什么、**哪些上游测试已失效及为什么**（历史债务账本） |
+
+---
+
+## 十八、开发与测试
+
+> 仓库此前**没有任何 CI**，34 个测试文件从没被自动跑过。现已补上。
+
+```powershell
+# 跑全部测试（每个文件 60s 超时，防止上游那个挂死用例拖垮整轮）
+node tools\run-tests.mjs
+
+# 只跑本仓库自己的测试（快，23 项：兼容层回归 + 发布卫生）
+node tools\run-tests.mjs --tools-only
+
+# 版本一致性检查（发版前用）
+node tools\sync-version.mjs           # 报告
+node tools\sync-version.mjs --bump    # 递增 compat 序号并同步各处
+```
+
+| 测试 | 覆盖什么 |
+| --- | --- |
+| [`tools/tests/compat-patches.test.js`](tools/tests/compat-patches.test.js) | **18 个兼容提交的 11 个关键点**：图标双代解析、`settingsScope` 兜底、`workflow-ptc`、预设声明行、`selectedDefault`、活动会话推导、诊断探针、视觉模式解绑……每条都标了对应提交号 |
+| [`tools/tests/release-hygiene.test.js`](tools/tests/release-hygiene.test.js) | 发布卫生：`.ps1` 必须带 BOM、`.cmd` 编码契约、禁止 U+FFFD（**曾真实丢失过中文**）、URL 必须指向本仓库、版本一致性、单一 lock 文件 |
+
+CI 见 [`.github/workflows/test.yml`](.github/workflows/test.yml)，在 **windows-latest** 上跑（编码行为只在 Windows 成立），Node 20 与 22 双版本。
+
+> ⚠️ **7 个上游测试已知失效**（断言的是兼容改动**之前**的结构）。它们没有静默跳过，而是逐条记录在
+> [`tools/tests/known-stale.mjs`](tools/tests/known-stale.mjs) 里，含**失效原因与修法**。
+> 详见 [`docs/测试与CI.md`](docs/测试与CI.md)。
+
+---
 | [`docs/验证报告.md`](docs/验证报告.md) | 隔离环境实测过程与结论（宿主侧 / 客户端侧 / 唯一降级项 / 未覆盖项） |
 | [`docs/风险-DSH换代.md`](docs/风险-DSH换代.md) | DSH 换代风险登记 |
 | [`docs/改动清单.md`](docs/改动清单.md) | 相对上游的文件分类清单（新增 / 修改 / 改名 / 删除） |

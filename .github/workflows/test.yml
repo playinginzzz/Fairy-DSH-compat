@@ -1,0 +1,120 @@
+name: test
+
+# 这个仓库此前**没有任何 CI**：34 个上游测试文件 + 0 个本仓库测试，
+# 从来没有被自动跑过。测试存在但不执行，价值接近零。
+# 这个工作流的首要目的就是把它们变成每次提交都跑。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # 目标环境是 Windows：安装器是 .cmd/.ps1，编码行为（CP936 / BOM）
+    # 只在 Windows 上成立。用 ubuntu 跑会漏掉本仓库最核心的那类缺陷。
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # 每个包各自持有 pnpm-lock.yaml（仓库没有根 workspace 声明），
+      # 所以逐个安装。vendor/ 里已内联 fairy-contracts 源码，无需额外构建。
+      - name: Install dependencies (per package)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pkgs = @(
+            'fairy-visual/dsh-fairy-visual',
+            'fairy-voice/dsh-fairy-voice',
+            'balance-meter/dsh-balance-meter',
+            'browser-dock/dsh-browser-dock',
+            'fairy-startup/dsh-fairy-startup',
+            'fairy-contracts'
+          )
+          foreach ($p in $pkgs) {
+            if (Test-Path "$p/package.json") {
+              Write-Host "::group::pnpm install $p"
+              Push-Location $p
+              try {
+                if (Test-Path 'pnpm-lock.yaml') {
+                  pnpm install --frozen-lockfile
+                } else {
+                  pnpm install --no-frozen-lockfile
+                }
+              } finally {
+                Pop-Location
+              }
+              Write-Host "::endgroup::"
+            }
+          }
+
+      # 第一阶段：本仓库自己的测试。**先跑这个**，因为它们直接对应
+      # 兼容修复与安全修复，是最该立刻给出信号的。
+      - name: Repo tests (compat + release hygiene)
+        shell: pwsh
+        run: node tools/run-tests.mjs --tools-only
+
+      # 第二阶段：各包自带的上游测试。
+      # 单文件 60s 超时（browser-dock/test/startup.test.js 在本机环境会挂住，
+      # 属上游自带、与本仓库改动无关，由 run-tests.mjs 的超时兜住）。
+      - name: Package tests (upstream suites)
+        shell: pwsh
+        run: node tools/run-tests.mjs
+        env:
+          FAIRY_TEST_TIMEOUT_MS: '60000'
+
+  # 编码守卫单独成 job：这些断言与 Node 版本无关，
+  # 而且一旦失败，报错信息（哪个文件、哪种编码形态）本身就是修法说明。
+  encoding:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Encoding contract (.ps1 BOM / .cmd GBK or UTF-16LE / no U+FFFD)
+        shell: pwsh
+        run: |
+          node --test tools/tests/release-hygiene.test.js
+
+      - name: .ps1 files must carry a UTF-8 BOM (PowerShell 5.1 + CP936)
+        shell: pwsh
+        run: |
+          # 独立于测试再验一次：BOM 丢失会让 .ps1 在 936 代码页下无法解析，
+          # 这是本仓库真实发生过的事故（见 docs/仓库与上游.md §3.1）。
+          $bad = @()
+          Get-ChildItem -Recurse -Filter *.ps1 |
+            Where-Object { $_.FullName -notmatch '\\(node_modules|\.git|release|snapshots)\\' } |
+            ForEach-Object {
+              $b = [System.IO.File]::ReadAllBytes($_.FullName)
+              if (-not ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF)) {
+                $bad += $_.FullName
+              }
+            }
+          if ($bad.Count -gt 0) {
+            Write-Host "::error::以下 .ps1 缺少 UTF-8 BOM（PowerShell 会解析失败）："
+            $bad | ForEach-Object { Write-Host "  $_" }
+            exit 1
+          }
+          Write-Host "OK: all .ps1 files carry a UTF-8 BOM."

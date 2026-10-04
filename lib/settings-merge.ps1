@@ -67,8 +67,13 @@ function New-MergedVisualText {
         // 更新提示会永远失灵。这里先把 -compat.N 归一化成第 4 个数字段再逐段比较。
         const isNewer = (remote, local) => {
           const norm = (v) => {
-            const m = String(v).match(/^(\d+(?:\.\d+)*)(?:-compat\.(\d+))?$/i);
-            if (!m) return String(v).split('.').map((x) => Number(x) || 0);
+            // 先归一化输入自身：远端 tag 可能带 v 前缀、空白（BOM/换行污染），
+            // 由本函数统一处理后缀与空格，不依赖调用方是否干净。
+            const m = String(v).trim().replace(/^v/i, '')
+              .match(/^(\d+(?:\.\d+)*)(?:-compat\.(\d+))?$/i);
+            // 取不到就按数字段兜底，且**过滤掉 NaN 段**：否则 NaN 段会占位，
+            // 把后面的段整体错位，比较结果会静默变成错的。
+            if (!m) return String(v).split('.').map((x) => Number(x)).filter((n) => Number.isFinite(n));
             const parts = m[1].split('.').map(Number);
             parts.push(m[2] === undefined ? 0 : Number(m[2]));
             return parts;
