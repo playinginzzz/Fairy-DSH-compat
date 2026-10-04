@@ -168,8 +168,12 @@ for (const suite of suites) {
 console.log('\n' + '='.repeat(60));
 console.log(`TOTAL  pass=${totalPass}  fail=${totalFail}  stale=${totalStale}`);
 
-// 名单腐化检测：名单里列了但已不存在的文件
-const missing = [...KNOWN_STALE.keys()].filter((k) => !staleSeen.has(k));
+// 名单腐化检测：名单里列了但已不存在的文件。
+// ⚠️ 只在**全量**运行时检查 —— `--tools-only` 刻意跳过各包，包级条目当然不会被访问，
+// 那时报"条目不存在"是假警报（CI 上真的踩过）。
+const missing = toolsOnly
+  ? []
+  : [...KNOWN_STALE.keys()].filter((k) => !staleSeen.has(k));
 if (missing.length) {
   console.log('\nknown-stale.mjs 里的以下条目已不存在（请清理名单）：');
   for (const m of missing) console.log(`  ${m}`);

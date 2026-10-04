@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      dsh-fairy-contracts:
-        specifier: link:../../fairy-contracts
-        version: link:../../fairy-contracts
     devDependencies:
       tsdown:
         specifier: ^0.22.14
