@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
+// 行尾归一化：.gitattributes 的 `* text=auto` 让 git 内部存 LF，
+// 而 Windows 检出的工作区是 CRLF。本文件有大量锚定 `\n` 的正则断言
+// （例如 /restoreSeat\(\{ clearWorkspaceTemplate: true \}\);\n  \};/），
+// 不做归一化就会出现"本机通过、CI 失败"的分裂结论 —— CI 上确实这样失败了。
+// 放在唯一的读取入口上，全文件一次性生效。
+const toLf = (s) => s.replace(/\r\n/g, '\n');
+const read = async (path) => toLf(await readFile(new URL(path, import.meta.url), 'utf8'));
 const [clientEntrySource, constantsSource, utilsSource, styleSource, composerDockSource, composerMarkerSource, composerMaterialSource, composerNativeSource, composerWorkspaceSource, composerResizeSource, composerInsetSource, composerSessionSource, composerAnchorSource, toBottomSource, adapterSource, lifecycleSource, controllerLifecycleSource, modeThemeSource, stageLifecycleSource, scrollbarSource, semanticMarkerSource, geometrySource, mascotSource, brandGeometrySource, powerModeSource, surfaceUtilsSource, visualTransitionsSource, serverSource, contractTypes] = await Promise.all([
   read('../src/client/index.js'),
   read('../src/client/constants.js'),

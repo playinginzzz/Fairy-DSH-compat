@@ -23,7 +23,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['20', '22']
+        # 为什么不是 20：pnpm 11 需要 Node 22+。
+        # 在 Node 20 上跑会在安装阶段直接崩：`No such built-in module: node:sqlite`。
+        # 这是工具链限制，不是本仓库的缺陷。
+        # 另外 GitHub 已弃用 Node 20 运行 Actions（2025-09-19 公告），
+        # 用 20 只会同时踩两个坑。
+        # 仓库的运行时要求（README「需要什么」）仍是 Node >= 20，未变。
+        node: ['22', '24']
 
     steps:
       - uses: actions/checkout@v4

@@ -6,8 +6,17 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const source = fs.readFileSync(path.join(root, 'lib', 'client.js'), 'utf8');
-const canonicalClientDiagnostics = fs.readFileSync(path.resolve(root, '..', '..', 'fairy-contracts', 'client-diagnostics.cjs'), 'utf8');
+
+// 行尾归一化：.gitattributes 的 `* text=auto` 意味着 git 内部存 LF，
+// 而在 Windows 上检出的工作区可能是 CRLF。下面的断言既要按字面查找
+// 边界注释、又要做 byte-for-byte 比对，因此必须先把 CRLF 归一到 LF ——
+// 否则本机与 CI 会得出不同结论（CI 上就是这样失败的）。
+const toLf = (s) => s.replace(/\r\n/g, '\n');
+
+const source = toLf(fs.readFileSync(path.join(root, 'lib', 'client.js'), 'utf8'));
+const canonicalClientDiagnostics = toLf(
+  fs.readFileSync(path.resolve(root, '..', '..', 'fairy-contracts', 'client-diagnostics.cjs'), 'utf8'),
+);
 
 function embeddedClientDiagnostics(value) {
   const begin = '// DSH_FAIRY_CLIENT_DIAGNOSTICS_BEGIN\n';

@@ -3,10 +3,18 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 
-const server = await readFile(new URL('../lib/index.js', import.meta.url), 'utf8');
-const client = await readFile(new URL('../lib/client.js', import.meta.url), 'utf8');
+// 行尾归一化：.gitattributes 的 `* text=auto` 意味着 git 内部存 LF，
+// 而 Windows 检出的工作区可能是 CRLF。本文件既要按字面查找边界注释、
+// 又要做 byte-for-byte 比对、还有多处锚定 `\n` 的正则，
+// 因此一律先把 CRLF 归一到 LF，否则本机与 CI 结论不一致（CI 上已失败）。
+const toLf = (s) => s.replace(/\r\n/g, '\n');
+
+const server = toLf(await readFile(new URL('../lib/index.js', import.meta.url), 'utf8'));
+const client = toLf(await readFile(new URL('../lib/client.js', import.meta.url), 'utf8'));
 const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
-const canonicalClientDiagnostics = await readFile(new URL('../../../fairy-contracts/client-diagnostics.cjs', import.meta.url), 'utf8');
+const canonicalClientDiagnostics = toLf(
+  await readFile(new URL('../../../fairy-contracts/client-diagnostics.cjs', import.meta.url), 'utf8'),
+);
 
 function embeddedClientDiagnostics(value) {
   const begin = '// DSH_FAIRY_CLIENT_DIAGNOSTICS_BEGIN\n';

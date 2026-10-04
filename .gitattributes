@@ -2,9 +2,27 @@
 # 带 BOM 的脚本与说明一律不做行尾归一化，避免 BOM/CRLF 被改写后 PS 5.1 读错。
 * text=auto
 
+# --- 必须逐字节原样存取的文件（-text）---
+#
+# 1) PowerShell / 批处理：靠 BOM 判定编码，改写 BOM 或换行会导致脚本无法解析
+#    或中文乱码（两类事故本仓库都真实发生过）。
 *.ps1 -text
 *.cmd -text
 安装说明.txt -text
+#
+# 2) 各包 vendor/ 下的契约副本与它们的正本。
+#    这些文件按设计要**逐字节**一致：包内测试会做
+#    `assert.equal(embedded, canonical)` 的 byte-for-byte 比对。
+#    若让 git 在 Windows 检出时把 LF 转成 CRLF，比对必然失败 ——
+#    CI（windows-latest）上就是这样失败的，而本机因为工作区恰好是 CRLF
+#    而"碰巧"通过。它们是构建产物/契约快照，不是给人合并的源码，
+#    因此不做行尾归一化。
+fairy-contracts/diagnostics.js -text
+fairy-contracts/client-diagnostics.cjs -text
+fairy-contracts/client-dom.cjs -text
+*/vendor/diagnostics.js -text
+*/vendor/client-diagnostics.cjs -text
+*/vendor/client-dom.cjs -text
 
 *.zip  binary
 *.sha256 binary
