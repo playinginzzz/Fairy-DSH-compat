@@ -1683,7 +1683,7 @@ module.exports = { FAIRY_LOG_PREFIX, createFairyDiagnostics };
             box.setAttribute('data-dsh-fairy-voice-alert', 'true');
             box.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483000;max-width:320px;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.7;background:#c0392b;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.3)';
             const msg = document.createElement('div');
-            msg.textContent = '语音异常：读不到当前会话的消息，朗读会没有内容。请到 设置 → Fairy 最底部「诊断信息」复制内容，发到群里（1124349108）。';
+            msg.textContent = '语音异常：读不到当前会话的消息，朗读会没有内容。请到 设置 → Fairy 最底部「诊断信息」复制内容，提交到本仓库 Issues。';
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;gap:8px;margin-top:8px;justify-content:flex-end';
             const later = document.createElement('button');

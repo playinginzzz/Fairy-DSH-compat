@@ -41,7 +41,11 @@ const UPDATE_CHECK_PATH = join(homedir(), '.dsh', 'fairy-voice', 'update-check.j
 const UPDATE_CHECK_TTL_MS = 3 * 60 * 60 * 1000;
 const UPDATE_CHECK_TIMEOUT_MS = 3000;
 const UPDATE_CHECK_DELAY_MS = 5000;
-const UPDATE_RELEASES_API = 'https://api.github.com/repos/Guzhou2002/Fairy-DSH-Optimized/releases/latest';
+/* [local patch compat] 更新检查必须查**本仓库**的 Releases。
+ * 指向上游孤舟版会拉到错误的版本号：本仓库的版本序列是 v0.3.8-compat.N，
+ * 与孤舟版的 v0.3.x 不是同一套 —— 用它比较会得出错误的「有新版本」结论，
+ * 更糟的是会把用户引导去装**不含跨内核兼容**的版本。同类修正见 lib/settings-merge.ps1。 */
+const UPDATE_RELEASES_API = 'https://api.github.com/repos/playinginzzz/Fairy-DSH-compat/releases/latest';
 function safeText(value) {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
 }

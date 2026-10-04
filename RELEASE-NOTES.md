@@ -1,5 +1,14 @@
 # 发布说明 · Fairy-DSH 整理版
 
+> [!IMPORTANT]
+> **历史档案 · 非本仓库现状**
+> 本文件是「**孤舟版**」（`Guzhou2002/Fairy-DSH-Optimized`）时期的记录快照，作者为孤舟蓑笠。
+> 其中出现的**仓库地址、安装 URL、提交身份、本地路径、交流群号、版本号**均为**当时状态**，
+> **不代表本仓库（跨内核兼容版 · `playinginzzz/Fairy-DSH-compat`）的当前配置**。
+> 本仓库的现状、安装方式与归属请以 [README](README.md) / [CONTRIBUTORS](CONTRIBUTORS.md) /
+> [兼容性适配报告](<docs/DSH Desktop × Fairy 兼容性适配报告.pdf>) 为准。
+> 保留本文是为了**记录演进过程与历史教训**，内容**有意不作修改**。
+
 - **上游**：[Chengzhibense/Fairy-DSH](https://github.com/Chengzhibense/Fairy-DSH) `main @ d639887`
 - **许可**：上游原创代码 Apache-2.0（见 `LICENSE` / `NOTICE`），本仓库仅做整理、分发与少量本地增强
 - **当前版本**：见仓库根 `VERSION` 文件

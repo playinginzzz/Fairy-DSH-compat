@@ -7710,7 +7710,7 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
         className: 'dsh-fairy-notice',
         'data-dsh-fairy-notice': 'true',
         style: { fontSize: '11px', lineHeight: 1.6, opacity: 0.55, marginBottom: '12px' },
-        children: '当前版本 v0.3.5 · 最新打包时间 2026-09-14 13:37 · 本包为「孤舟蓑笠」基于「橙汁本色」开源项目的优化分支 · 交流群 1124349108'
+        children: '当前版本 v0.3.8-compat.1 · 本包为「playinginzzz」维护的跨内核兼容版，基于「孤舟蓑笠」整理版、原始代码来自「橙汁本色」· 问题请开本仓库 Issues'
       });
     }
     /* [compat patch] HDD 视觉模式改为可选：未开启时在设置面板提示。
@@ -7745,11 +7745,11 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
      * 状态会明说：检测中 / 已是最新 / 检测失败（小灰字）/ 有新版本（红字）。
      * 只有【宿主】那侧保持完全静默（不写日志、不弹错），面板上该说的一句不少说。 */
     function FairyUpdateNotice() {
-      const LOCAL_VERSION = '0.3.5';
-      const REPO_RELEASES = 'https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest';
-      const REPO_HOME = 'https://github.com/Guzhou2002/Fairy-DSH-Optimized';
-      const RELEASES_API = 'https://api.github.com/repos/Guzhou2002/Fairy-DSH-Optimized/releases/latest';
-      const UPDATE_COMMAND = 'dsh plugin --profile web add https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/dsh-fairy-visual.tgz https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/dsh-fairy-voice.tgz https://github.com/Guzhou2002/Fairy-DSH-Optimized/releases/latest/download/dsh-balance-meter.tgz';
+      const LOCAL_VERSION = '0.3.8-compat.1';
+      const REPO_RELEASES = 'https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest';
+      const REPO_HOME = 'https://github.com/playinginzzz/Fairy-DSH-compat';
+      const RELEASES_API = 'https://api.github.com/repos/playinginzzz/Fairy-DSH-compat/releases/latest';
+      const UPDATE_COMMAND = 'dsh plugin --profile web add https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/dsh-fairy-visual.tgz https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/dsh-fairy-voice.tgz https://github.com/playinginzzz/Fairy-DSH-compat/releases/latest/download/dsh-balance-meter.tgz';
       // phase: checking（正在查）/ latest（已是最新）/ failed（查不到）/ update（有新版本 → 红字）
       const [phase, setPhase] = React.useState('checking');
       const [remoteTag, setRemoteTag] = React.useState('');
@@ -7808,7 +7808,7 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
       if (phase !== 'update' || !remoteTag) {
         return jsx('div', {
           'data-dsh-fairy-update': phase,
-          // 样式跟「当前版本 v0.3.5 · 最新打包时间 …」那行一致（同字号 11px、同透明度 0.55）。
+          // 样式跟「当前版本 v0.3.8-compat.1 · …」那行一致（同字号 11px、同透明度 0.55）。
           // [local patch 0.3.5] 它现在排在版本行【上面】（放最顶上），所以不再用负 marginTop 去贴它。
           style: { fontSize: '11px', lineHeight: 1.6, opacity: 0.55, marginTop: 0, marginBottom: '4px' },
           children: phase === 'checking'
@@ -7918,7 +7918,7 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
           list.push({
             id: 'client-mounted', title: '朗读控件是否挂上', level: 'fail',
             detail: '页面里没发现朗读控件——客户端脚本没有跑起来（可能插件没装好，或者页面还是旧的缓存）。',
-            fix: '先重启 DSH，然后在本页按 Ctrl+F5 强制刷新；仍然这样，请点下面「复制诊断信息」并发到群里。'
+            fix: '先重启 DSH，然后在本页按 Ctrl+F5 强制刷新；仍然这样，请点下面「复制诊断信息」并提交到本仓库 Issues。'
           });
         } else {
           list.push({ id: 'client-mounted', title: '朗读控件是否挂上', level: 'ok', detail: `朗读控件已挂上（页面加载于 ${new Date(diag.mountedAt || Date.now()).toLocaleTimeString()}）。`, fix: '' });
@@ -7937,19 +7937,19 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
             list.push({
               id: 'message', title: '消息识别（能不能读到要朗读的内容）', level: 'fail',
               detail: '读不到消息：你页面里的朗读客户端是【旧版本】（诊断信息里缺 chatSource / structure 这两个新字段）。这不是 DSH 的问题，也不是操作失误 —— 更新插件之后，页面还在跑旧脚本。',
-              fix: '先重启 DSH，然后在本页按 Ctrl+F5 强制刷新，再回来看这一项。要是还这样，说明 dsh-fairy-voice 这个包本身没更新到最新（设置页顶部那个「整理版」版本号来自视觉包，代表不了它），请重新装一次。'
+              fix: '先重启 DSH，然后在本页按 Ctrl+F5 强制刷新，再回来看这一项。要是还这样，说明 dsh-fairy-voice 这个包本身没更新到最新（设置页顶部那个版本号来自视觉包，代表不了它），请重新装一次。'
             });
           } else if (diag.hasChat !== true) {
             list.push({
               id: 'message', title: '消息识别（能不能读到要朗读的内容）', level: 'fail',
               detail: `插件读不到会话的消息结构——这属于插件和当前 DSH 版本的适配问题，不是操作失误。技术细节：快照字段=[${(diag.snapshotKeys || []).join(', ')}]，chat 字段=[${(diag.chatKeys || []).join(', ')}]。本页最底部「结构摘要」里有完整的字段清单。`,
-              fix: '这一项只能由插件作者修。请点「复制诊断信息」把结果发到群里（群号 1124349108），作者据此适配。'
+              fix: '这一项只能由插件作者修。请点「复制诊断信息」并提交到本仓库 Issues，作者据此适配。'
             });
           } else if ((diag.finalCount || 0) === 0) {
             list.push({
               id: 'message', title: '消息识别（能不能读到要朗读的内容）', level: 'warn',
               detail: `能读到会话结构（消息 ${diag.orderLength} 条、回合 ${diag.turnCount} 个），但当前还没有"已完成的回复"可以朗读。`,
-              fix: '先在会话里正常问一句、等回复跑完，再回来点「重新自检」。如果明明有回复却一直是 0，请把诊断信息发到群里。'
+              fix: '先在会话里正常问一句、等回复跑完，再回来点「重新自检」。如果明明有回复却一直是 0，请把诊断信息提交到本仓库 Issues。'
             });
           } else {
             list.push({ id: 'message', title: '消息识别（能不能读到要朗读的内容）', level: 'ok', detail: `已能读到消息：当前会话有 ${diag.finalCount} 条可朗读的回复。`, fix: '' });
@@ -8112,7 +8112,7 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
        * 为什么不放一个要手动全选的文本框：同一个面板上已经有「复制诊断信息」按钮了，
        * 按钮 + 剪贴板是这套 UI 的既有做法，文本框要用户自己选、自己复制，是退步。 */
       const copyInstallGuide = React.useCallback(() => {
-        const docUrl = 'https://raw.githubusercontent.com/Guzhou2002/Fairy-DSH-Optimized/main/docs/install-moss.md';
+        const docUrl = 'https://raw.githubusercontent.com/playinginzzz/Fairy-DSH-compat/main/docs/install-moss.md';
         const text = [
           '请帮我在这台电脑上安装 MOSS-TTS-Nano，作为 DSH 里 Fairy 朗读的第二个引擎。',
           '',
@@ -8390,7 +8390,7 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
                 }),
                 jsx('button', {
                   type: 'button',
-                  onClick: () => { window.open('https://github.com/Guzhou2002/Fairy-DSH-Optimized/blob/main/docs/install-moss.md', '_blank'); },
+                  onClick: () => { window.open('https://github.com/playinginzzz/Fairy-DSH-compat/blob/main/docs/install-moss.md', '_blank'); },
                   children: '自己看安装说明'
                 })
               ] })
@@ -8497,7 +8497,7 @@ html[data-dsh-fairy-visual][data-dsh-fairy-theme="light"] [data-dsh-fairy-mascot
           jsx('h3', { style: { margin: 0, paddingTop: '16px', borderTop: '1px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.3))', fontSize: '14px' }, children: '诊断信息（排查用）' }),
           jsx('div', {
             style: { fontSize: '12px', lineHeight: 1.7, opacity: 0.7, maxWidth: '380px' },
-            children: '语音出问题时：点下面这个按钮复制诊断信息 —— 结构摘要已经一起带上了，复制一次、粘一次就行（群号 1124349108）。里面没有聊天内容；诊断信息带本机路径和自检结果，不想公开可以自行删掉。'
+            children: '语音出问题时：点下面这个按钮复制诊断信息 —— 结构摘要已经一起带上了，复制一次、粘一次就行。里面没有聊天内容；诊断信息带本机路径和自检结果，不想公开可以自行删掉。'
           }),
           // [local patch 0.3.2] 自检明细折叠后，原来那个「复制诊断信息」按钮可能被藏起来，
           // 所以这里再放一个 —— 这一节的用途本来就是「把信息发出去」，按钮放这儿更顺手。
